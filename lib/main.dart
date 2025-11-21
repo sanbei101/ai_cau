@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flyer_chat_text_stream_message/flyer_chat_text_stream_message.dart';
+import 'package:gpt_markdown/gpt_markdown.dart';
 import 'glm.dart';
 
 void main() {
@@ -133,6 +134,26 @@ class _ChatPageState extends State<ChatPage> {
                   message: message,
                   streamState: state,
                   index: index,
+                  mode: TextStreamMessageMode.instantMarkdown,
+                );
+              },
+          textMessageBuilder:
+              (context, message, index, {required isSentByMe, groupStatus}) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSentByMe ? Colors.blue : const Color(0xfff5f5f5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: GptMarkdown(
+                    message.text,
+                    style: TextStyle(
+                      color: isSentByMe ? Colors.white : Colors.black,
+                    ),
+                  ),
                 );
               },
         ),
