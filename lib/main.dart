@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:flyer_chat_text_stream_message/flyer_chat_text_stream_message.dart';
 import 'glm.dart';
 
 void main() {
@@ -26,6 +27,7 @@ class _ChatPageState extends State<ChatPage> {
   final String currentUserId = 'user1';
   final String aiUserId = 'glm_ai';
   final chatController = InMemoryChatController();
+  final Map<String, StreamState> _streamStates = {};
 
   @override
   void dispose() {
@@ -36,14 +38,18 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> callGLMStream(String userText) async {
     final String aiMessageId = '${Random().nextInt(100000)}';
 
-    var currentAiMessage = TextMessage(
+    final streamMessage = TextStreamMessage(
       id: aiMessageId,
       authorId: aiUserId,
       createdAt: DateTime.now().toUtc(),
-      text: "🤔 思考中...",
+      streamId: aiMessageId,
     );
 
-    chatController.insertMessage(currentAiMessage);
+    chatController.insertMessage(streamMessage);
+
+    setState(() {
+      _streamStates[aiMessageId] = const StreamStateLoading();
+    });
 
     String fullReasoning = "";
     String fullContent = "";
@@ -61,7 +67,6 @@ class _ChatPageState extends State<ChatPage> {
         fullContent += chunk.content;
 
         String displayUserText = "";
-
         if (fullReasoning.isNotEmpty) {
           displayUserText += "> **深度思考**\n";
           final reasoningLines = fullReasoning.split('\n');
@@ -70,19 +75,33 @@ class _ChatPageState extends State<ChatPage> {
           }
           displayUserText += "\n---\n";
         }
-
         displayUserText += fullContent;
 
-        final newAiMessage = TextMessage(
-          id: aiMessageId,
-          authorId: aiUserId,
-          createdAt: DateTime.now().toUtc(),
-          text: displayUserText,
-        );
-
-        chatController.updateMessage(currentAiMessage, newAiMessage);
-        currentAiMessage = newAiMessage;
+        setState(() {
+          _streamStates[aiMessageId] = StreamStateStreaming(displayUserText);
+        });
       }
+
+      final finalState = _streamStates[aiMessageId];
+      String finalText = "无内容";
+      if (finalState is StreamStateStreaming) {
+        finalText = finalState.accumulatedText;
+      } else if (finalState is StreamStateCompleted) {
+        finalText = finalState.finalText;
+      }
+
+      final finalMessage = TextMessage(
+        id: aiMessageId,
+        authorId: aiUserId,
+        createdAt: DateTime.now().toUtc(),
+        text: finalText,
+      );
+
+      chatController.updateMessage(streamMessage, finalMessage);
+
+      setState(() {
+        _streamStates.remove(aiMessageId);
+      });
     } catch (e) {
       final errorMessage = TextMessage(
         id: aiMessageId,
@@ -90,7 +109,7 @@ class _ChatPageState extends State<ChatPage> {
         createdAt: DateTime.now().toUtc(),
         text: "❌ 出错了: $e",
       );
-      chatController.updateMessage(currentAiMessage, errorMessage);
+      chatController.updateMessage(streamMessage, errorMessage);
     }
   }
 
@@ -103,6 +122,20 @@ class _ChatPageState extends State<ChatPage> {
         resolveUser: (id) async =>
             User(id: id, name: id == aiUserId ? "GLM" : "Me"),
         chatController: chatController,
+        builders: Builders(
+          textStreamMessageBuilder:
+              (context, message, index, {required isSentByMe, groupStatus}) {
+                final state =
+                    _streamStates[message.streamId] ??
+                    const StreamStateLoading();
+
+                return FlyerChatTextStreamMessage(
+                  message: message,
+                  streamState: state,
+                  index: index,
+                );
+              },
+        ),
         onMessageSend: (text) {
           chatController.insertMessage(
             TextMessage(

@@ -163,6 +163,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flyer_chat_text_stream_message:
+    dependency: "direct main"
+    description:
+      name: flyer_chat_text_stream_message
+      sha256: "85b41b67b8e5d4066b23dc2b71165d480ecdfe1c8919158e4ce7619fc6968d92"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.2.6"
   freezed_annotation:
     dependency: transitive
     description:
@@ -427,6 +435,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.8.5+2"
+  shimmer:
+    dependency: transitive
+    description:
+      name: shimmer
+      sha256: "5f88c883a22e9f9f299e5ba0e4f7e6054857224976a5d9f839d4ebdc94a14ac9"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.0.0"
   sky_engine:
     dependency: transitive
     description: flutter

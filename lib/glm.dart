@@ -91,6 +91,7 @@ class SimpleGLM {
                 }
               }
             } catch (e) {
+              // ignore: avoid_print
               print("JSON Parse Error: $e");
             }
           }
