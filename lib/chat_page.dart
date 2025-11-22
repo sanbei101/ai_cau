@@ -117,11 +117,12 @@ class _ChatPageState extends State<ChatPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('AI Chat'),
-        backgroundColor: CupertinoColors.systemBackground.withValues(
-          alpha: 0.8,
-        ),
-        border: const Border(
-          bottom: BorderSide(color: CupertinoColors.separator, width: 0.0),
+        backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+        border: Border(
+          bottom: BorderSide(
+            color: CupertinoColors.separator.resolveFrom(context),
+            width: 0.1,
+          ),
         ),
       ),
       child: SafeArea(
@@ -129,7 +130,7 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             Expanded(
               child: Container(
-                color: CupertinoColors.systemBackground,
+                color: CupertinoColors.systemBackground.resolveFrom(context),
                 child: ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 10),
@@ -140,18 +141,22 @@ class _ChatPageState extends State<ChatPage> {
                 ),
               ),
             ),
-            _buildInputArea(),
+            _buildInputArea(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInputArea() {
+  Widget _buildInputArea(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: CupertinoColors.secondarySystemBackground,
-        border: Border(top: BorderSide(color: CupertinoColors.separator)),
+      decoration: BoxDecoration(
+        color: CupertinoColors.secondarySystemBackground.resolveFrom(context),
+        border: Border(
+          top: BorderSide(
+            color: CupertinoColors.separator.resolveFrom(context),
+          ),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
       child: Row(

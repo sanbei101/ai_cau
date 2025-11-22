@@ -90,7 +90,7 @@ class MessageBubble extends StatelessWidget {
       contentWidget = ValueListenableBuilder<String>(
         valueListenable: message.contentNotifier!,
         builder: (context, value, child) {
-          return GptMarkdown('$value ▍', style: markdownStyle);
+          return GptMarkdown(value, style: markdownStyle);
         },
       );
     } else {
