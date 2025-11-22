@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
+import 'package:flutter/widget_previews.dart';
 
 class ChatMessage {
   final String id;
@@ -41,6 +42,25 @@ class ChatMessage {
   }
 }
 
+@Preview()
+Widget typingDotsPreview() {
+  return const Center(child: _TypingDotsAnimation());
+}
+
+@Preview()
+Widget messageBubblePreview() {
+  final message = ChatMessage(
+    id: '1',
+    senderName: 'CAU',
+    isStreaming: true,
+    content: '',
+    isUser: false,
+    timestamp: DateTime.now(),
+  );
+
+  return MessageBubble(message: message);
+}
+
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
   final bool showAvatar;
@@ -53,8 +73,6 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 判断逻辑：如果是流式消息且内容为空，显示 Loading 胶囊
-    // 否则显示正常的文本气泡
     final bool isTypingState = message.isStreaming && message.content.isEmpty;
 
     if (isTypingState) {
@@ -64,7 +82,6 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
-  // --- 1. 文本气泡构建逻辑 (原 MessageBubble) ---
   Widget _buildTextBubble(BuildContext context) {
     final isUser = message.isUser;
 
@@ -76,30 +93,13 @@ class MessageBubble extends StatelessWidget {
         ? CupertinoColors.white
         : CupertinoColors.label.resolveFrom(context);
 
-    final align = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-
     return Padding(
       padding: .symmetric(vertical: 8.0, horizontal: 12.0),
       child: Column(
-        crossAxisAlignment: align,
+        crossAxisAlignment: isUser ? .end : .start,
         children: [
-          if (!isUser) ...[
-            Padding(
-              padding: const EdgeInsets.only(left: 48.0, bottom: 4.0),
-              child: Text(
-                message.senderName,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                  fontWeight: .w500,
-                ),
-              ),
-            ),
-          ],
           Row(
-            mainAxisAlignment: isUser
-                ? MainAxisAlignment.end
-                : MainAxisAlignment.start,
+            mainAxisAlignment: isUser ? .end : .start,
             crossAxisAlignment: .end,
             children: [
               if (!isUser && showAvatar) ...[
@@ -119,7 +119,6 @@ class MessageBubble extends StatelessWidget {
                     ),
                   ),
                   child: GptMarkdown(
-                    // 如果正在流式传输但已有内容，追加光标
                     message.isStreaming
                         ? '${message.content} ▍'
                         : message.content,
@@ -137,7 +136,7 @@ class MessageBubble extends StatelessWidget {
             padding: EdgeInsets.only(
               top: 4.0,
               right: isUser ? 0 : 0,
-              left: isUser ? 0 : 48, // 对齐头像右侧
+              left: isUser ? 0 : 48,
             ),
             child: Text(
               isUser ? "Delivered" : _formatTime(message.timestamp),
@@ -154,7 +153,7 @@ class MessageBubble extends StatelessWidget {
 
   Widget _buildTypingIndicator(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8, top: 2),
+      padding: .only(left: 12, right: 12, bottom: 8, top: 2),
       child: Row(
         crossAxisAlignment: .center,
         children: [

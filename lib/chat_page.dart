@@ -44,7 +44,7 @@ class _ChatPageState extends State<ChatPage> {
       _messages.add(
         ChatMessage(
           id: aiMessageId,
-          senderName: 'AI Assistant',
+          senderName: 'CAU',
           content: '',
           isUser: false,
           timestamp: DateTime.now(),
