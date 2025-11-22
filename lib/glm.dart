@@ -12,7 +12,7 @@ class GLMChunk {
 
 class SimpleGLM {
   static String baseUrl = "https://open.bigmodel.cn/api/paas/v4";
-  static String apiKey = "";
+  static String apiKey = "b6c3ce3004ce4b699fd27dc65d14f632.dXVJQ3hochLTB0ks";
 
   static final Dio _dio = Dio(
     BaseOptions(
@@ -22,10 +22,9 @@ class SimpleGLM {
     ),
   );
 
-  /// 流式对话请求
   static Stream<GLMChunk> streamChat({
     required String content,
-    String model = "glm-4.6-flash",
+    String model = "glm-4-flash",
   }) async* {
     if (apiKey.isEmpty) throw Exception("请先设置 SimpleGLM.apiKey");
 
@@ -59,7 +58,6 @@ class SimpleGLM {
         final chunk = utf8.decode(bytes);
         buffer += chunk;
 
-        // SSE 格式通常以 "\n\n" 分隔
         while (buffer.contains("\n")) {
           final index = buffer.indexOf("\n");
           final line = buffer.substring(0, index).trim();
@@ -98,7 +96,12 @@ class SimpleGLM {
         }
       }
     } on DioException catch (e) {
-      throw Exception("流式请求失败: ${e.message}");
+      // ignore: avoid_print
+      print("Dio Error: ${e.message}");
+      if (e.response != null) {
+        print("Server Response: ${e.response?.data}");
+      }
+      throw Exception("流式请求失败: ${e.message}\n详细信息: ${e.response?.data}");
     }
   }
 }

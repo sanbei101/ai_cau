@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'message.dart';
+import 'glm.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -13,29 +14,7 @@ class _ChatPageState extends State<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
 
-  final List<ChatMessage> _messages = [
-    ChatMessage(
-      id: '1',
-      senderName: 'AI Assistant',
-      content: '你好！我是你的 AI 助手。有什么我可以帮你的吗？',
-      isUser: false,
-      timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-    ),
-    ChatMessage(
-      id: '2',
-      senderName: 'User',
-      content: '我想写一个好看的 iOS 风格聊天页面。',
-      isUser: true,
-      timestamp: DateTime.now().subtract(const Duration(minutes: 4)),
-    ),
-    ChatMessage(
-      id: '3',
-      senderName: 'AI Assistant',
-      content: '没问题！我们可以使用 Flutter 的 Cupertino 组件库来实现。',
-      isUser: false,
-      timestamp: DateTime.now().subtract(const Duration(minutes: 3)),
-    ),
-  ];
+  final List<ChatMessage> _messages = [];
 
   bool _isTyping = false;
 
@@ -59,31 +38,10 @@ class _ChatPageState extends State<ChatPage> {
 
     _scrollToBottom();
 
-    // 模拟网络延迟后开始流式输出
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isTyping = false;
-        });
-        _simulateStreamingResponse();
-      }
-    });
+    _getAIResponse(text);
   }
 
-  void _simulateStreamingResponse() async {
-    const String fullText = r"""
-这是一个模拟的流式回复。
-
-我们可以支持 Markdown 语法，比如：
-- 列表项 1
-- 列表项 2
-
-**加粗文字** 和 *斜体文字*
-
-\( f(x) = x^2 + 2x + 1 \)
-""";
-
-    // 添加初始空消息
+  Future<void> _getAIResponse(String text) async {
     final aiMessageId = DateTime.now().toString();
     setState(() {
       _messages.add(
@@ -98,26 +56,44 @@ class _ChatPageState extends State<ChatPage> {
       );
     });
 
-    // 逐字追加内容
-    for (int i = 0; i < fullText.length; i++) {
-      await Future.delayed(const Duration(milliseconds: 50));
+    String fullContent = "";
+
+    try {
+      await for (final chunk in SimpleGLM.streamChat(content: text)) {
+        if (!mounted) return;
+
+        if (chunk.isDone) {
+          break;
+        }
+
+        fullContent += chunk.content;
+
+        setState(() {
+          final index = _messages.indexWhere((m) => m.id == aiMessageId);
+          if (index != -1) {
+            _messages[index] = _messages[index].copyWith(content: fullContent);
+          }
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
       if (!mounted) return;
-
       setState(() {
-        final lastMsg = _messages.last;
-        _messages[_messages.length - 1] = lastMsg.copyWith(
-          content: fullText.substring(0, i + 1),
-        );
+        final index = _messages.indexWhere((m) => m.id == aiMessageId);
+        if (index != -1) {
+          _messages[index] = _messages[index].copyWith(content: "Error: $e");
+        }
       });
-      _scrollToBottom();
-    }
-
-    // 完成流式输出
-    if (mounted) {
-      setState(() {
-        final lastMsg = _messages.last;
-        _messages[_messages.length - 1] = lastMsg.copyWith(isStreaming: false);
-      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+          final index = _messages.indexWhere((m) => m.id == aiMessageId);
+          if (index != -1) {
+            _messages[index] = _messages[index].copyWith(isStreaming: false);
+          }
+        });
+      }
     }
   }
 
@@ -136,11 +112,13 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('AI Chat'),
-        backgroundColor: Color(0xCCF9F9F9),
-        border: Border(
-          bottom: BorderSide(color: Color(0x4C000000), width: 0.0),
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('AI Chat'),
+        backgroundColor: CupertinoColors.systemBackground.withValues(
+          alpha: 0.8,
+        ),
+        border: const Border(
+          bottom: BorderSide(color: CupertinoColors.separator, width: 0.0),
         ),
       ),
       child: SafeArea(
@@ -148,7 +126,7 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             Expanded(
               child: Container(
-                color: const Color(0xFFFFFFFF), // 背景色
+                color: CupertinoColors.systemBackground,
                 child: ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 10),
@@ -172,8 +150,8 @@ class _ChatPageState extends State<ChatPage> {
   Widget _buildInputArea() {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFF9F9F9),
-        border: Border(top: BorderSide(color: Color(0xFFE5E5EA))),
+        color: CupertinoColors.secondarySystemBackground,
+        border: Border(top: BorderSide(color: CupertinoColors.separator)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
       child: Row(
@@ -193,9 +171,9 @@ class _ChatPageState extends State<ChatPage> {
               placeholder: 'iMessage',
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFFFF),
+                color: CupertinoColors.systemBackground,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE5E5EA)),
+                border: Border.all(color: CupertinoColors.separator),
               ),
               onSubmitted: _handleSubmitted,
             ),
@@ -206,7 +184,7 @@ class _ChatPageState extends State<ChatPage> {
             child: const Icon(
               CupertinoIcons.arrow_up_circle_fill,
               size: 32,
-              color: Color(0xFF00C853),
+              color: CupertinoColors.activeGreen,
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 
@@ -49,10 +50,13 @@ class MessageBubble extends StatelessWidget {
     final isUser = message.isUser;
 
     final bubbleColor = isUser
-        ? const Color(0xFF00C853)
-        : const Color(0xFFE0E0E0);
+        ? CupertinoColors.systemGreen.resolveFrom(context)
+        : CupertinoColors.systemGrey5.resolveFrom(context);
 
-    final textColor = isUser ? Colors.white : Colors.black87;
+    final textColor = isUser
+        ? CupertinoColors.white
+        : CupertinoColors.label.resolveFrom(context);
+
     final align = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
 
     return Padding(
@@ -67,7 +71,7 @@ class MessageBubble extends StatelessWidget {
                 message.senderName,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -80,11 +84,9 @@ class MessageBubble extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (!isUser && showAvatar) ...[
-                _buildAvatar(),
+                _buildAvatar(context),
                 const SizedBox(width: 8),
               ],
-
-              // 气泡本体
               Flexible(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -93,16 +95,11 @@ class MessageBubble extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: bubbleColor,
-                    // MessageKit 风格圆角：根据发送者方向调整
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
                       topRight: const Radius.circular(20),
-                      bottomLeft: Radius.circular(
-                        isUser ? 20 : 4,
-                      ), // 对方的消息左下角是尖的
-                      bottomRight: Radius.circular(
-                        isUser ? 4 : 20,
-                      ), // 用户的消息右下角是尖的
+                      bottomLeft: Radius.circular(isUser ? 20 : 4),
+                      bottomRight: Radius.circular(isUser ? 4 : 20),
                     ),
                   ),
                   child: GptMarkdown(
@@ -127,7 +124,10 @@ class MessageBubble extends StatelessWidget {
             ),
             child: Text(
               isUser ? "Delivered" : _formatTime(message.timestamp),
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 11,
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+              ),
             ),
           ),
         ],
@@ -135,14 +135,16 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(BuildContext context) {
     return CircleAvatar(
       radius: 16,
-      backgroundColor: Colors.purple[100],
+      backgroundColor: CupertinoColors.secondarySystemFill.resolveFrom(context),
       child: message.avatarUrl == null
           ? Text(
               message.senderName.substring(0, 1),
-              style: const TextStyle(color: Colors.purple),
+              style: TextStyle(
+                color: CupertinoColors.systemBlue.resolveFrom(context),
+              ),
             )
           : null,
     );
@@ -186,13 +188,12 @@ class _TypingIndicatorBubbleState extends State<TypingIndicatorBubble>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 占位头像，保持对齐
           const SizedBox(width: 32 + 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFE0E0E0),
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemGrey5.resolveFrom(context),
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
                 bottomLeft: Radius.circular(4),
@@ -215,8 +216,10 @@ class _TypingIndicatorBubbleState extends State<TypingIndicatorBubble>
                         child: Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
-                            color: Colors.black54,
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.secondaryLabel.resolveFrom(
+                              context,
+                            ),
                             shape: BoxShape.circle,
                           ),
                         ),
