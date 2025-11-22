@@ -118,14 +118,9 @@ class _ChatPageState extends State<ChatPage> {
       navigationBar: CupertinoNavigationBar(
         middle: const Text('AI Chat'),
         backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
-        border: Border(
-          bottom: BorderSide(
-            color: CupertinoColors.separator.resolveFrom(context),
-            width: 0.1,
-          ),
-        ),
       ),
       child: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             Expanded(
@@ -152,47 +147,50 @@ class _ChatPageState extends State<ChatPage> {
     return Container(
       decoration: BoxDecoration(
         color: CupertinoColors.secondarySystemBackground.resolveFrom(context),
-        border: Border(
-          top: BorderSide(
-            color: CupertinoColors.separator.resolveFrom(context),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: .all(8.0),
+          child: Row(
+            children: [
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {},
+                child: const Icon(
+                  CupertinoIcons.add,
+                  color: CupertinoColors.systemGrey,
+                ),
+              ),
+              Expanded(
+                child: CupertinoTextField(
+                  controller: _textController,
+                  focusNode: _focusNode,
+                  placeholder: 'iMessage',
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemBackground,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: CupertinoColors.separator),
+                  ),
+                  onSubmitted: _handleSubmitted,
+                ),
+              ),
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                onPressed: () => _handleSubmitted(_textController.text),
+                child: const Icon(
+                  CupertinoIcons.arrow_up_circle_fill,
+                  size: 32,
+                  color: CupertinoColors.activeGreen,
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-      child: Row(
-        children: [
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {},
-            child: const Icon(
-              CupertinoIcons.add,
-              color: CupertinoColors.systemGrey,
-            ),
-          ),
-          Expanded(
-            child: CupertinoTextField(
-              controller: _textController,
-              focusNode: _focusNode,
-              placeholder: 'iMessage',
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemBackground,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: CupertinoColors.separator),
-              ),
-              onSubmitted: _handleSubmitted,
-            ),
-          ),
-          CupertinoButton(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            onPressed: () => _handleSubmitted(_textController.text),
-            child: const Icon(
-              CupertinoIcons.arrow_up_circle_fill,
-              size: 32,
-              color: CupertinoColors.activeGreen,
-            ),
-          ),
-        ],
       ),
     );
   }
