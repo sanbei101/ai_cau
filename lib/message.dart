@@ -25,11 +25,17 @@ class ChatMessage {
   ChatMessage copyWith({String? content, bool? isStreaming}) {
     return ChatMessage(
       id: id,
+
       senderName: senderName,
+
       content: content ?? this.content,
+
       isUser: isUser,
+
       timestamp: timestamp,
+
       avatarUrl: avatarUrl,
+
       isStreaming: isStreaming ?? this.isStreaming,
     );
   }
@@ -47,6 +53,19 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 判断逻辑：如果是流式消息且内容为空，显示 Loading 胶囊
+    // 否则显示正常的文本气泡
+    final bool isTypingState = message.isStreaming && message.content.isEmpty;
+
+    if (isTypingState) {
+      return _buildTypingIndicator(context);
+    } else {
+      return _buildTextBubble(context);
+    }
+  }
+
+  // --- 1. 文本气泡构建逻辑 (原 MessageBubble) ---
+  Widget _buildTextBubble(BuildContext context) {
     final isUser = message.isUser;
 
     final bubbleColor = isUser
@@ -60,7 +79,7 @@ class MessageBubble extends StatelessWidget {
     final align = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      padding: .symmetric(vertical: 8.0, horizontal: 12.0),
       child: Column(
         crossAxisAlignment: align,
         children: [
@@ -70,9 +89,9 @@ class MessageBubble extends StatelessWidget {
               child: Text(
                 message.senderName,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                  fontWeight: FontWeight.w500,
+                  fontWeight: .w500,
                 ),
               ),
             ),
@@ -81,7 +100,7 @@ class MessageBubble extends StatelessWidget {
             mainAxisAlignment: isUser
                 ? MainAxisAlignment.end
                 : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: .end,
             children: [
               if (!isUser && showAvatar) ...[
                 _buildAvatar(context),
@@ -89,10 +108,7 @@ class MessageBubble extends StatelessWidget {
               ],
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  padding: .symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: bubbleColor,
                     borderRadius: BorderRadius.only(
@@ -103,6 +119,7 @@ class MessageBubble extends StatelessWidget {
                     ),
                   ),
                   child: GptMarkdown(
+                    // 如果正在流式传输但已有内容，追加光标
                     message.isStreaming
                         ? '${message.content} ▍'
                         : message.content,
@@ -120,7 +137,7 @@ class MessageBubble extends StatelessWidget {
             padding: EdgeInsets.only(
               top: 4.0,
               right: isUser ? 0 : 0,
-              left: isUser ? 0 : 48,
+              left: isUser ? 0 : 48, // 对齐头像右侧
             ),
             child: Text(
               isUser ? "Delivered" : _formatTime(message.timestamp),
@@ -129,6 +146,32 @@ class MessageBubble extends StatelessWidget {
                 color: CupertinoColors.tertiaryLabel.resolveFrom(context),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypingIndicator(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8, top: 2),
+      child: Row(
+        crossAxisAlignment: .center,
+        children: [
+          if (showAvatar) ...[
+            _buildAvatar(context),
+            const SizedBox(width: 8),
+          ] else ...[
+            const SizedBox(width: 32.0 + 8.0),
+          ],
+
+          Container(
+            padding: .symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemGrey5.resolveFrom(context),
+              borderRadius: .circular(16),
+            ),
+            child: const _TypingDotsAnimation(),
           ),
         ],
       ),
@@ -155,14 +198,14 @@ class MessageBubble extends StatelessWidget {
   }
 }
 
-class TypingIndicatorBubble extends StatefulWidget {
-  const TypingIndicatorBubble({super.key});
+class _TypingDotsAnimation extends StatefulWidget {
+  const _TypingDotsAnimation();
 
   @override
-  State<TypingIndicatorBubble> createState() => _TypingIndicatorBubbleState();
+  State<_TypingDotsAnimation> createState() => _TypingDotsAnimationState();
 }
 
-class _TypingIndicatorBubbleState extends State<TypingIndicatorBubble>
+class _TypingDotsAnimationState extends State<_TypingDotsAnimation>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
@@ -183,54 +226,31 @@ class _TypingIndicatorBubbleState extends State<TypingIndicatorBubble>
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+    return SizedBox(
+      width: 26,
+      height: 6,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          const SizedBox(width: 32 + 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: CupertinoColors.systemGrey5.resolveFrom(context),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-                bottomLeft: Radius.circular(4),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
-            child: SizedBox(
-              width: 40,
-              height: 10,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(3, (index) {
-                  return AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, child) {
-                      final double t = (_controller.value + index / 3) % 1.0;
-                      final double opacity = (sin(t * pi * 2) + 1) / 2;
-                      return Opacity(
-                        opacity: 0.3 + (opacity * 0.7),
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: CupertinoColors.secondaryLabel.resolveFrom(
-                              context,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }),
-              ),
-            ),
-          ),
-        ],
+        mainAxisAlignment: .spaceBetween,
+        children: List.generate(3, (index) {
+          return AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              final double t = (_controller.value + index * 0.2) % 1.0;
+              final double opacity = (sin(t * pi * 2) + 1) / 2;
+              return Opacity(
+                opacity: 0.3 + (opacity * 0.7),
+                child: Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    shape: .circle,
+                  ),
+                ),
+              );
+            },
+          );
+        }),
       ),
     );
   }

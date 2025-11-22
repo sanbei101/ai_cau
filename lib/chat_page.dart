@@ -16,8 +16,6 @@ class _ChatPageState extends State<ChatPage> {
 
   final List<ChatMessage> _messages = [];
 
-  bool _isTyping = false;
-
   void _handleSubmitted(String text) {
     if (text.trim().isEmpty) return;
 
@@ -33,7 +31,6 @@ class _ChatPageState extends State<ChatPage> {
           timestamp: DateTime.now(),
         ),
       );
-      _isTyping = true;
     });
 
     _scrollToBottom();
@@ -87,7 +84,6 @@ class _ChatPageState extends State<ChatPage> {
     } finally {
       if (mounted) {
         setState(() {
-          _isTyping = false;
           final index = _messages.indexWhere((m) => m.id == aiMessageId);
           if (index != -1) {
             _messages[index] = _messages[index].copyWith(isStreaming: false);
@@ -130,11 +126,8 @@ class _ChatPageState extends State<ChatPage> {
                 child: ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  itemCount: _messages.length + (_isTyping ? 1 : 0),
+                  itemCount: _messages.length,
                   itemBuilder: (context, index) {
-                    if (index == _messages.length) {
-                      return const TypingIndicatorBubble();
-                    }
                     return MessageBubble(message: _messages[index]);
                   },
                 ),
