@@ -40,6 +40,9 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _getAIResponse(String text) async {
     final aiMessageId = DateTime.now().toString();
+
+    final contentNotifier = ValueNotifier<String>("");
+
     setState(() {
       _messages.add(
         ChatMessage(
@@ -49,11 +52,13 @@ class _ChatPageState extends State<ChatPage> {
           isUser: false,
           timestamp: DateTime.now(),
           isStreaming: true,
+          contentNotifier: contentNotifier,
         ),
       );
     });
 
     String fullContent = "";
+    DateTime lastScrollTime = DateTime.now();
 
     try {
       await for (final chunk in SimpleGLM.streamChat(content: text)) {
@@ -65,30 +70,32 @@ class _ChatPageState extends State<ChatPage> {
 
         fullContent += chunk.content;
 
-        setState(() {
-          final index = _messages.indexWhere((m) => m.id == aiMessageId);
-          if (index != -1) {
-            _messages[index] = _messages[index].copyWith(content: fullContent);
-          }
-        });
-        _scrollToBottom();
+        contentNotifier.value = fullContent;
+
+        if (DateTime.now().difference(lastScrollTime).inMilliseconds > 100) {
+          lastScrollTime = DateTime.now();
+          _scrollToBottom();
+        }
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        final index = _messages.indexWhere((m) => m.id == aiMessageId);
-        if (index != -1) {
-          _messages[index] = _messages[index].copyWith(content: "Error: $e");
-        }
-      });
+      fullContent = "Error: $e";
+      contentNotifier.value = fullContent;
     } finally {
       if (mounted) {
         setState(() {
           final index = _messages.indexWhere((m) => m.id == aiMessageId);
           if (index != -1) {
-            _messages[index] = _messages[index].copyWith(isStreaming: false);
+            _messages[index] = _messages[index].copyWith(
+              content: fullContent,
+              isStreaming: false,
+              contentNotifier: null,
+            );
           }
         });
+
+        _scrollToBottom();
+        contentNotifier.dispose();
       }
     }
   }

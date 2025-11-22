@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
-import 'package:flutter/widget_previews.dart';
 
 class ChatMessage {
   final String id;
@@ -13,6 +12,8 @@ class ChatMessage {
   final String? avatarUrl;
   final bool isStreaming;
 
+  final ValueNotifier<String>? contentNotifier;
+
   ChatMessage({
     required this.id,
     required this.senderName,
@@ -21,44 +22,25 @@ class ChatMessage {
     required this.timestamp,
     this.avatarUrl,
     this.isStreaming = false,
+    this.contentNotifier,
   });
 
-  ChatMessage copyWith({String? content, bool? isStreaming}) {
+  ChatMessage copyWith({
+    String? content,
+    bool? isStreaming,
+    ValueNotifier<String>? contentNotifier,
+  }) {
     return ChatMessage(
       id: id,
-
       senderName: senderName,
-
       content: content ?? this.content,
-
       isUser: isUser,
-
       timestamp: timestamp,
-
       avatarUrl: avatarUrl,
-
       isStreaming: isStreaming ?? this.isStreaming,
+      contentNotifier: contentNotifier ?? this.contentNotifier,
     );
   }
-}
-
-@Preview()
-Widget typingDotsPreview() {
-  return const Center(child: _TypingDotsAnimation());
-}
-
-@Preview()
-Widget messageBubblePreview() {
-  final message = ChatMessage(
-    id: '1',
-    senderName: 'CAU',
-    isStreaming: true,
-    content: '',
-    isUser: false,
-    timestamp: DateTime.now(),
-  );
-
-  return MessageBubble(message: message);
 }
 
 class MessageBubble extends StatelessWidget {
@@ -73,7 +55,10 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isTypingState = message.isStreaming && message.content.isEmpty;
+    final bool isTypingState =
+        message.isStreaming &&
+        message.content.isEmpty &&
+        message.contentNotifier == null;
 
     if (isTypingState) {
       return _buildTypingIndicator(context);
@@ -93,14 +78,37 @@ class MessageBubble extends StatelessWidget {
         ? CupertinoColors.white
         : CupertinoColors.label.resolveFrom(context);
 
+    final markdownStyle = TextStyle(
+      color: textColor,
+      fontSize: 16,
+      height: 1.4,
+    );
+
+    Widget contentWidget;
+
+    if (message.contentNotifier != null) {
+      contentWidget = ValueListenableBuilder<String>(
+        valueListenable: message.contentNotifier!,
+        builder: (context, value, child) {
+          return GptMarkdown('$value ▍', style: markdownStyle);
+        },
+      );
+    } else {
+      contentWidget = GptMarkdown(message.content, style: markdownStyle);
+    }
+
     return Padding(
-      padding: .symmetric(vertical: 8.0, horizontal: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
       child: Column(
-        crossAxisAlignment: isUser ? .end : .start,
+        crossAxisAlignment: isUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: isUser ? .end : .start,
-            crossAxisAlignment: .end,
+            mainAxisAlignment: isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (!isUser && showAvatar) ...[
                 _buildAvatar(context),
@@ -108,7 +116,10 @@ class MessageBubble extends StatelessWidget {
               ],
               Flexible(
                 child: Container(
-                  padding: .symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: bubbleColor,
                     borderRadius: BorderRadius.only(
@@ -118,16 +129,7 @@ class MessageBubble extends StatelessWidget {
                       bottomRight: Radius.circular(isUser ? 4 : 20),
                     ),
                   ),
-                  child: GptMarkdown(
-                    message.isStreaming
-                        ? '${message.content} ▍'
-                        : message.content,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 16,
-                      height: 1.4,
-                    ),
-                  ),
+                  child: contentWidget,
                 ),
               ),
             ],
@@ -153,9 +155,9 @@ class MessageBubble extends StatelessWidget {
 
   Widget _buildTypingIndicator(BuildContext context) {
     return Padding(
-      padding: .only(left: 12, right: 12, bottom: 8, top: 2),
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8, top: 2),
       child: Row(
-        crossAxisAlignment: .center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (showAvatar) ...[
             _buildAvatar(context),
@@ -165,10 +167,10 @@ class MessageBubble extends StatelessWidget {
           ],
 
           Container(
-            padding: .symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: CupertinoColors.systemGrey5.resolveFrom(context),
-              borderRadius: .circular(16),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: const _TypingDotsAnimation(),
           ),
@@ -229,7 +231,7 @@ class _TypingDotsAnimationState extends State<_TypingDotsAnimation>
       width: 26,
       height: 6,
       child: Row(
-        mainAxisAlignment: .spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: List.generate(3, (index) {
           return AnimatedBuilder(
             animation: _controller,
@@ -243,7 +245,7 @@ class _TypingDotsAnimationState extends State<_TypingDotsAnimation>
                   height: 5,
                   decoration: BoxDecoration(
                     color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                    shape: .circle,
+                    shape: BoxShape.circle,
                   ),
                 ),
               );
